@@ -11,6 +11,7 @@ import mil.nga.giat.geowave.core.ingest.GeoWaveData;
 import mil.nga.giat.geowave.core.ingest.hdfs.StageToHdfsPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestFromHdfsPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithMapper;
+import mil.nga.giat.geowave.core.ingest.kafka.StageToKafkaPlugin;
 import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 import mil.nga.giat.geowave.core.store.adapter.WritableDataAdapter;
@@ -25,6 +26,7 @@ abstract public class AbstractSimpleFeatureIngestPlugin<I> implements
 		LocalFileIngestPlugin<SimpleFeature>,
 		IngestFromHdfsPlugin<I, SimpleFeature>,
 		StageToHdfsPlugin<I>,
+		StageToKafkaPlugin<I>,
 		Persistable
 {
 	protected CQLFilterOptionProvider filterProvider = new CQLFilterOptionProvider();

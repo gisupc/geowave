@@ -122,6 +122,12 @@ public class GeoLifeIngestPlugin extends
 	public Schema getAvroSchemaForHdfsType() {
 		return HdfsFile.getClassSchema();
 	}
+	
+	@Override
+	public HdfsFile toAvroObject(
+			final File input ) {
+		return toHdfsObjects(input)[0];
+	}
 
 	@Override
 	public HdfsFile[] toHdfsObjects(

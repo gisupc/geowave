@@ -161,6 +161,12 @@ public class GpxIngestPlugin extends
 	public Schema getAvroSchemaForHdfsType() {
 		return GpxTrack.getClassSchema();
 	}
+	
+	@Override
+	public GpxTrack toAvroObject(
+			final File input ) {
+		return toHdfsObjects(input)[0];
+	}
 
 	@Override
 	public GpxTrack[] toHdfsObjects(

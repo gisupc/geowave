@@ -5,6 +5,7 @@ import mil.nga.giat.geowave.core.ingest.IngestFormatOptionProvider;
 import mil.nga.giat.geowave.core.ingest.IngestFormatPluginProviderSpi;
 import mil.nga.giat.geowave.core.ingest.hdfs.StageToHdfsPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestFromHdfsPlugin;
+import mil.nga.giat.geowave.core.ingest.kafka.StageToKafkaPlugin;
 import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
 
 import org.opengis.feature.simple.SimpleFeature;
@@ -24,6 +25,14 @@ public class GeoToolsVectorDataStoreIngestFormat implements
 		// unsupported right now
 		throw new UnsupportedOperationException(
 				"GeoTools vector files cannot be ingested from HDFS");
+	}
+	
+	@Override
+	public StageToKafkaPlugin<Object> getStageToKafkaPlugin()
+			throws UnsupportedOperationException {
+		// unsupported right now
+		throw new UnsupportedOperationException(
+				"GeoTools vector files cannot be staged to Kafka");
 	}
 
 	@Override
