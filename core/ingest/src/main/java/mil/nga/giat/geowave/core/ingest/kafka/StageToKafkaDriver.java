@@ -5,11 +5,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
 import mil.nga.giat.geowave.core.ingest.IngestFormatPluginProviderSpi;
 import mil.nga.giat.geowave.core.ingest.local.AbstractLocalFileDriver;
 
@@ -19,17 +17,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Logger;
 
-
 /**
- * This class actually executes the staging of data to HDFS based on the
- * available type plugin providers that are discovered through SPI.
+ * This class actually executes the staging of data to a Kafka topic based on
+ * the available type plugin providers that are discovered through SPI.
  */
 public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 		AbstractLocalFileDriver<StageToKafkaPlugin<?>, StageKafkaData<T>>
 {
 	private final static Logger LOGGER = Logger.getLogger(StageToKafkaDriver.class);
 	private KafkaCommandLineOptions kafkaOptions;
-	private Producer<String, T> producer;
 
 	public StageToKafkaDriver(
 			final String operation ) {
@@ -61,28 +57,19 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 			final StageToKafkaPlugin<?> plugin,
 			final StageKafkaData<T> runData ) {
 
-		if (producer == null) {
-			Properties props = KafkaCommandLineOptions.getProperties();
-			props.put(
-					"serializer.class",
-					"mil.nga.giat.geowave.ingest.kafka.AvroKafkaEncoder");
-			props.put(
-					"message.max.bytes",
-					"5000000");
-
-			producer = new Producer<String, T>(
-					new ProducerConfig(
-							props));
+		try {
+			final Producer<String, T> producer = runData.getProducer(
+					typeName,
+					plugin);
+			final T avroRecordFile = plugin.toAvroObject(file);
+			final KeyedMessage<String, T> data = new KeyedMessage<String, T>(
+					typeName + "-" + kafkaOptions.getKafkaTopic(),
+					avroRecordFile);
+			producer.send(data);
 		}
-
-		// System.out.println("working on " + file.getAbsolutePath());
-		T something = plugin.toAvroObject(file);
-		KeyedMessage<String, T> data = new KeyedMessage<String, T>(
-				kafkaOptions.getKafkaTopic(),
-				something);
-		producer.send(data);
-		// System.out.println("sent to kafka " + file.getAbsolutePath());
-
+		catch (final Exception e) {
+			LOGGER.info("Unable to send file [" + file.getAbsolutePath() + "] to Kafka topic: " + e.getMessage());
+		}
 	}
 
 	@Override
@@ -90,7 +77,6 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 			final String[] args,
 			final List<IngestFormatPluginProviderSpi<?, ?>> pluginProviders ) {
 
-		// first collect the stage to kafka plugins
 		final Map<String, StageToKafkaPlugin<?>> stageToKafkaPlugins = new HashMap<String, StageToKafkaPlugin<?>>();
 		for (final IngestFormatPluginProviderSpi<?, ?> pluginProvider : pluginProviders) {
 			StageToKafkaPlugin<?> stageToKafkaPlugin = null;
@@ -119,11 +105,11 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 					stageToKafkaPlugins,
 					runData);
 			runData.close();
-			producer.close();
 		}
-		catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		catch (final IOException e) {
+			LOGGER.error(
+					"Unable to process input",
+					e);
 		}
 
 	}

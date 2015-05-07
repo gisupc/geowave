@@ -64,6 +64,11 @@ public class KafkaCommandLineOptions
 			success = false;
 			LOGGER.fatal("Kafka properties file not provided");
 		}
+		if (!success) {
+			throw new ParseException(
+					"Required option is missing");
+		}
+		
 		properties = new Properties();
 		try {
 			properties.load(new FileReader(

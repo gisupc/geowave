@@ -2,42 +2,60 @@ package mil.nga.giat.geowave.core.ingest.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+
+import kafka.javaapi.producer.Producer;
+import kafka.producer.ProducerConfig;
 
 import org.apache.avro.specific.SpecificRecordBase;
-//import org.apache.hadoop.fs.FSDataOutputStream;
-//import org.apache.hadoop.fs.FileSystem;
-//import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 public class StageKafkaData<T extends SpecificRecordBase>
 {
 
 	private final static Logger LOGGER = Logger.getLogger(StageKafkaData.class);
-	private final Map<String, GenericAvroSerializer<T>> cachedWriters = new HashMap<String, GenericAvroSerializer<T>>();
+	private final Map<String, Producer<String, T>> cachedProducers = new HashMap<String, Producer<String, T>>();
 
-	public StageKafkaData() {
+	public StageKafkaData() {}
 
-	}
-
-	public GenericAvroSerializer<T> getWriter(
+	public Producer<String, T> getProducer(
 			final String typeName,
 			final StageToKafkaPlugin<?> plugin ) {
-		return getDataWriterCreateIfNull(
+		return getProducerCreateIfNull(
 				typeName,
 				plugin);
 	}
 
-	private synchronized GenericAvroSerializer<T> getDataWriterCreateIfNull(
+	private synchronized Producer<String, T> getProducerCreateIfNull(
 			final String typeName,
 			final StageToKafkaPlugin<?> plugin ) {
-		if (!cachedWriters.containsKey(typeName)) {
-			GenericAvroSerializer<T> serializer = new GenericAvroSerializer<T>();
-			cachedWriters.put(
+		if (!cachedProducers.containsKey(typeName)) {
+			final Properties props = KafkaCommandLineOptions.getProperties();
+			final ProducerConfig producerConfig = new ProducerConfig(
+					props);
+
+			final Producer<String, T> producer = new Producer<String, T>(
+					producerConfig);
+
+			cachedProducers.put(
 					typeName,
-					serializer);
+					producer);
 		}
-		return cachedWriters.get(typeName);
+		return cachedProducers.get(typeName);
 	}
 
-	public synchronized void close() {}
+	public synchronized void close() {
+		for (final Producer<String, T> producer : cachedProducers.values()) {
+			try {
+				producer.close();
+			}
+			catch (final Exception e) {
+				LOGGER.warn(
+						"Unable to close kafka producer",
+						e);
+			}
+		}
+		cachedProducers.clear();
+	}
+
 }
