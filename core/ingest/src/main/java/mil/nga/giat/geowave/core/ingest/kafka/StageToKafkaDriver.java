@@ -9,6 +9,7 @@ import java.util.Map;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import mil.nga.giat.geowave.core.ingest.IngestFormatPluginProviderSpi;
+import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.local.AbstractLocalFileDriver;
 
 import org.apache.avro.specific.SpecificRecordBase;
@@ -22,7 +23,7 @@ import org.apache.log4j.Logger;
  * the available type plugin providers that are discovered through SPI.
  */
 public class StageToKafkaDriver<T extends SpecificRecordBase> extends
-		AbstractLocalFileDriver<StageToKafkaPlugin<?>, StageKafkaData<T>>
+		AbstractLocalFileDriver<StageToAvroPlugin<?>, StageKafkaData<?>>
 {
 	private final static Logger LOGGER = Logger.getLogger(StageToKafkaDriver.class);
 	private KafkaCommandLineOptions kafkaOptions;
@@ -54,18 +55,20 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 	protected void processFile(
 			final File file,
 			final String typeName,
-			final StageToKafkaPlugin<?> plugin,
-			final StageKafkaData<T> runData ) {
+			final StageToAvroPlugin<?> plugin,
+			final StageKafkaData<?> runData ) {
 
 		try {
-			final Producer<String, T> producer = runData.getProducer(
+			final Producer<String, Object> producer = (Producer<String, Object>) runData.getProducer(
 					typeName,
 					plugin);
-			final T avroRecordFile = plugin.toAvroObject(file);
-			final KeyedMessage<String, T> data = new KeyedMessage<String, T>(
-					typeName + "-" + kafkaOptions.getKafkaTopic(),
-					avroRecordFile);
-			producer.send(data);
+			final Object[] avroRecords = plugin.toAvroObjects(file);
+			for (final Object avroRecord : avroRecords) {
+				final KeyedMessage<String, Object> data = new KeyedMessage<String, Object>(
+						typeName + "-" + kafkaOptions.getKafkaTopic(),
+						avroRecord);
+				producer.send(data);
+			}
 		}
 		catch (final Exception e) {
 			LOGGER.info("Unable to send file [" + file.getAbsolutePath() + "] to Kafka topic: " + e.getMessage());
@@ -77,11 +80,11 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 			final String[] args,
 			final List<IngestFormatPluginProviderSpi<?, ?>> pluginProviders ) {
 
-		final Map<String, StageToKafkaPlugin<?>> stageToKafkaPlugins = new HashMap<String, StageToKafkaPlugin<?>>();
+		final Map<String, StageToAvroPlugin<?>> stageToKafkaPlugins = new HashMap<String, StageToAvroPlugin<?>>();
 		for (final IngestFormatPluginProviderSpi<?, ?> pluginProvider : pluginProviders) {
-			StageToKafkaPlugin<?> stageToKafkaPlugin = null;
+			StageToAvroPlugin<?> stageToKafkaPlugin = null;
 			try {
-				stageToKafkaPlugin = pluginProvider.getStageToKafkaPlugin();
+				stageToKafkaPlugin = pluginProvider.getStageToAvroPlugin();
 
 				if (stageToKafkaPlugin == null) {
 					LOGGER.warn("Plugin provider for ingest type '" + pluginProvider.getIngestFormatName() + "' does not support staging to HDFS");

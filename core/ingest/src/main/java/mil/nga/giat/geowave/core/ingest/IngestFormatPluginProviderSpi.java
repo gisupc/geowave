@@ -1,8 +1,7 @@
 package mil.nga.giat.geowave.core.ingest;
 
-import mil.nga.giat.geowave.core.ingest.hdfs.StageToHdfsPlugin;
+import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestFromHdfsPlugin;
-import mil.nga.giat.geowave.core.ingest.kafka.StageToKafkaPlugin;
 import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
 
 /**
@@ -11,7 +10,7 @@ import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
  * required that a new ingest format implement all of the plugins. However, each
  * plugin directly corresponds to a user selected operation and only the plugins
  * that are supported will result in usable operations.
- * 
+ *
  * @param <I>
  *            The type for intermediate data
  * @param <O>
@@ -21,24 +20,22 @@ public interface IngestFormatPluginProviderSpi<I, O>
 {
 	/**
 	 * This plugin will be used by the ingestion framework to stage intermediate
-	 * data to HDFS from a local filesystem.
-	 * 
-	 * @return The plugin for staging to HDFS if it is supported
+	 * data from a local filesystem (for example to HDFS for map reduce ingest
+	 * or to kafka for kafka ingest).
+	 *
+	 * @return The plugin for staging to avro if it is supported
 	 * @throws UnsupportedOperationException
 	 *             If staging data is not supported (generally this implies that
-	 *             ingesting using map-reduce will not be supported)
+	 *             ingesting using map-reduce or kafka will not be supported)
 	 */
-	public StageToHdfsPlugin<I> getStageToHdfsPlugin()
-			throws UnsupportedOperationException;
-	
-	public StageToKafkaPlugin<I> getStageToKafkaPlugin()
+	public StageToAvroPlugin<I> getStageToAvroPlugin()
 			throws UnsupportedOperationException;
 
 	/**
 	 * This plugin will be used by the ingestion framework to read data from
 	 * HDFS in the form of the intermediate data format, and translate the
 	 * intermediate data into the data entries that will be written in GeoWave.
-	 * 
+	 *
 	 * @return The plugin for ingesting data from HDFS
 	 * @throws UnsupportedOperationException
 	 *             If ingesting intermediate data from HDFS is not supported
@@ -50,7 +47,7 @@ public interface IngestFormatPluginProviderSpi<I, O>
 	 * This plugin will be used by the ingestion framework to read data from a
 	 * local file system, and translate supported files into the data entries
 	 * that will be written directly in GeoWave.
-	 * 
+	 *
 	 * @return The plugin for ingesting data from a local file system directly
 	 *         into GeoWave
 	 * @throws UnsupportedOperationException
@@ -66,7 +63,7 @@ public interface IngestFormatPluginProviderSpi<I, O>
 	 * commandline. For consistency, this name is preferably lower-case and
 	 * without spaces, and should uniquely identify the data format as much as
 	 * possible.
-	 * 
+	 *
 	 * @return The name that will be associated with this format
 	 */
 	public String getIngestFormatName();
@@ -74,8 +71,8 @@ public interface IngestFormatPluginProviderSpi<I, O>
 	/**
 	 * This is a means for a plugin to provide custom command-line options. If
 	 * this is null, there will be no custom options added.
-	 * 
-	 * 
+	 *
+	 *
 	 * @return The ingest format's option provider or null for no custom options
 	 */
 	public IngestFormatOptionProvider getIngestFormatOptionProvider();
@@ -84,7 +81,7 @@ public interface IngestFormatPluginProviderSpi<I, O>
 	 * This is a user-friendly full description of the data format that this
 	 * plugin provider supports. It will be presented to the command-line user
 	 * as help when the registered data formats are listed.
-	 * 
+	 *
 	 * @return The user-friendly full description for this data format
 	 */
 	public String getIngestFormatDescription();

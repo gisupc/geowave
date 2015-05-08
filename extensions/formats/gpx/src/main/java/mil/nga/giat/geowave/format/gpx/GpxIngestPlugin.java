@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,8 +32,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.opengis.feature.simple.SimpleFeature;
 import org.xml.sax.SAXException;
-
-import com.google.common.collect.Iterators;
 
 /**
  * This plugin is used for ingesting any GPX formatted data from a local file
@@ -161,15 +157,9 @@ public class GpxIngestPlugin extends
 	public Schema getAvroSchemaForHdfsType() {
 		return GpxTrack.getClassSchema();
 	}
-	
-	@Override
-	public GpxTrack toAvroObject(
-			final File input ) {
-		return toHdfsObjects(input)[0];
-	}
 
 	@Override
-	public GpxTrack[] toHdfsObjects(
+	public GpxTrack[] toAvroObjects(
 			final File input ) {
 		GpxTrack track = null;
 		if (metadata != null) {

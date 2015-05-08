@@ -68,7 +68,7 @@ public class KafkaCommandLineOptions
 			throw new ParseException(
 					"Required option is missing");
 		}
-		
+
 		properties = new Properties();
 		try {
 			properties.load(new FileReader(
