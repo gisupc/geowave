@@ -15,6 +15,11 @@ public class KafkaCommandLineOptions
 {
 
 	private final static Logger LOGGER = Logger.getLogger(KafkaCommandLineOptions.class);
+	private final static String[] kafkaProperties = {
+		"metadata.broker.list",
+		"zookeeper.hosts",
+		"serializer.class"
+	};
 	private final String kafkaTopic;
 	private final String kafkaPropertiesPath;
 	protected static Properties properties;
@@ -61,9 +66,15 @@ public class KafkaCommandLineOptions
 			LOGGER.fatal("Kafka topic not provided");
 		}
 		if (kafkaPropertiesPath == null) {
-			success = false;
-			LOGGER.fatal("Kafka properties file not provided");
+			final StringBuffer buffer = new StringBuffer();
+			buffer.append("Kafka properties file not provided, will check system properties for the following:\n");
+			for (String kafkaProp : kafkaProperties) {
+				buffer.append("\t" + kafkaProp + "\n");
+			}
+			LOGGER.warn(buffer.toString());
+			success = checkForKafkaProperties();
 		}
+
 		if (!success) {
 			throw new ParseException(
 					"Required option is missing");
@@ -92,5 +103,19 @@ public class KafkaCommandLineOptions
 		return new KafkaCommandLineOptions(
 				kafkaTopic,
 				kafkaPropertiesPath);
+	}
+
+	private static boolean checkForKafkaProperties() {
+		boolean success = true;
+		for (String kafkaProp : kafkaProperties) {
+			// buffer.append("\t" + kafkaProp + "\n");
+			String property = System.getProperty(kafkaProp);
+			if (property == null) {
+				LOGGER.error("missing " + kafkaProp + " property");
+				success = false;
+			}
+		}
+
+		return success;
 	}
 }

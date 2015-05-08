@@ -65,7 +65,7 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 			final Object[] avroRecords = plugin.toAvroObjects(file);
 			for (final Object avroRecord : avroRecords) {
 				final KeyedMessage<String, Object> data = new KeyedMessage<String, Object>(
-						typeName + "-" + kafkaOptions.getKafkaTopic(),
+						kafkaOptions.getKafkaTopic(),
 						avroRecord);
 				producer.send(data);
 			}

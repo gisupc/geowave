@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 /**
  * This class can be sub-classed as a general-purpose recipe for parallelizing
- * ingestion of files by directly staging the binary of the file to HDFS.
+ * ingestion of files by directly staging the binary of the file to Avro.
  */
 abstract public class AbstractStageWholeFileToAvro implements
 		StageToAvroPlugin<WholeFile>
